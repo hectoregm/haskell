@@ -32,37 +32,46 @@ inOrden(t(R,I,D),L) :- inOrden(I,IL), inOrden(D,DL), pega(IL,[R],L1), pega(L1,DL
 postOrden(nil,[]).
 postOrden(t(R,I,D),L) :- postOrden(I,IL), postOrden(D,DL), pega(IL,DL,L1), pega(L1,[R],L).
 
-%Autómatas 
-/*start(0).
-t(0, a, 1).
-t(0, b, 2).
-t(1, a, 2).
-t(1, b, 1).
-t(2, a, 2).
-t(2, b, 2).
-final(1).
+%hojas
+hojas(nil, []).
+hojas(t(R,nil,nil), [R]).
+hojas(t(_,I,D), L) :- hojas(I, HI), hojas(D,HD), pega(HI,HD, L).
 
-accept(S) :- start(I), path(I, S).
+%numHojas
+numHojas(T,N) :- hojas(T, L), length(L, N).
 
-path(S,[]) :- final(S).
-path(S,[H|T]) :- t(S,H,X) , path(X,T). */
+%internos
+internos(nil, []).
+internos(t(_,nil,nil), []).
+internos(t(R,I,D), L) :- internos(I, II), internos(D, ID), pega([R], II, L1), pega(L1,ID, L).
 
-% automata que decodifica cadenas de digitos binarios de longitud par,
-% con la siguiente definicion:
-% 00 = a
-% 01 = b
-% 10 = c
-% 11 = d
+%numNodInternos
+numNodInternos(T,N) :- internos(T, L), length(L, N).
 
-start(0).
-t(0, 0, [], 1).
-t(0, 1, [], 2).
-t(1, 0, a, 0).
-t(1, 1, b, 0).
-t(2, 0, c, 0).
-t(2, 1, d, 0).
 
-mealy(In, Out) :- start(I), execute(I, In, Out).
-execute(_, [], []).
-execute(S, [H|T], Y) :- t(S, H, [], N), execute(N, T, Y).
-execute(S, [H|T], [X|Y]) :- t(S, H, X, N), execute(N, T, Y).
+%drop
+drop(0,L,L).
+drop(1,[_|[]], []).
+drop(N,[_|T], R) :- X is N - 1, drop(X,T,R).
+
+%take
+take(0,_,[]).
+take(1,[H|_],[H]).
+take(N,[H|T],R) :- X is N - 1, take(X, T, R1), pega([H], R1, R).
+
+%veces
+veces(_,[],0).
+veces(X,[X|T],R) :- veces(X,T,R1), R is R1 + 1.
+veces(X,[_|T],R) :- veces(X,T, R).
+
+%get
+get(0,[H|_],H).
+get(N,[_|T],X) :- M is N - 1, get(M, T, X).
+
+% Aritmetica
+expr(A) --> s, nat(B,_), s, "-", s, expr(C), s, {A is B-C}.
+expr(A) --> s, nat(B,_), {A is B}, s.
+nat(X,1) --> dig(X).
+nat(X,T) --> dig(A), nat(B,S), {T is 10*S, X is A*T + B}.
+dig(X) --> [D], {"0" =< D, D =< "9", X is D - "0"}.
+s --> "" | " ", s.
